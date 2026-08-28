@@ -1,107 +1,74 @@
-# MindPulse — Student Mental Health Predictor
+MindPulse
 
-MindPulse predicts a student's mental health score (0–10) from their social
-media habits, lifestyle, and stress levels, using a Random Forest model
-trained on real student survey data.
+A small web app that estimates a student's mental health score (0–10) based on their social media usage, sleep, stress, and study habits. Built as a way to combine a machine learning model with a proper frontend instead of just leaving it as a notebook.
 
-## Project structure
+Trained on the Student Social Media and Mental Health Impact dataset, using a Random Forest pipeline that scores around R² = 0.87 on the held-out test set.
 
-```
+Why I built this
+
+I trained the model first (see backend/model_training_notebook.ipynb) and originally wrapped it in a Streamlit app so I could actually test it. It worked, but Streamlit UIs only get you so far in terms of design, so I rebuilt the frontend in React and kept the FastAPI + model as a separate service behind it. This repo is that setup — a real backend serving real predictions, not a mockup.
+
+What it does
+
+You fill out a short form — age, average daily screen time, how many times you unlock your phone, sleep hours, stress level, study hours, that kind of thing — and it returns a predicted mental health score along with a short breakdown of what's likely dragging the score down or helping it, plus a few suggestions. There's also a history tab if you want to track predictions over time (stored via Supabase).
+
+To be clear, this is not a diagnostic tool. It's a model trained on survey data, not a clinician. Treat it as a rough, educational estimate.
+
+Stack
+Backend: Python, FastAPI, scikit-learn, pandas, joblib
+Frontend: React, TypeScript, Vite, Tailwind
+Storage: MySQL (optional, backend-side logging) + Supabase (frontend history)
+Project layout
 MindPulse/
-├── backend/          FastAPI service that loads the trained model and serves predictions
-│   ├── main.py                     API entry point (/predict)
-│   ├── database.py                 Optional MySQL persistence layer
-│   ├── Mental_Health_Model.pkl     Trained Random Forest pipeline
-│   ├── model_training_notebook.ipynb  Notebook used to train the model
-│   ├── training_data.csv           Source dataset
+├── backend/
+│   ├── main.py                        FastAPI app, /predict endpoint
+│   ├── database.py                    optional MySQL logging
+│   ├── Mental_Health_Model.pkl        trained model
+│   ├── model_training_notebook.ipynb  training / EDA
+│   ├── training_data.csv
 │   └── requirements.txt
-└── frontend/         React + Vite + TypeScript single-page app
+└── frontend/
     ├── src/
-    │   ├── components/             Header, Hero, PredictionForm, ResultCard, HistorySection, AboutSection
-    │   ├── prediction.ts            Calls the backend API and shapes the UI data
-    │   ├── supabase.ts              Optional prediction-history storage
+    │   ├── components/                Header, Hero, PredictionForm, ResultCard, HistorySection, AboutSection
+    │   ├── prediction.ts              calls the API, formats results for the UI
+    │   ├── supabase.ts
     │   └── types.ts
     └── package.json
-```
+Running it locally
 
-## Running it locally
+You need both halves running — the frontend just calls the backend for predictions, it doesn't do anything on its own.
 
-### 1. Backend (API + model)
+Backend
 
-```bash
+bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+source .venv/bin/activate      # .venv\Scripts\activate on Windows
 pip install -r requirements.txt
-cp .env.example .env           # only needed if you want MySQL history storage
-python main.py                 # serves http://127.0.0.1:8000
-```
+python main.py
 
-The `/predict` endpoint validates the request body and returns
-`{ "predicted_mental_health_score": <float> }`. Database persistence is
-optional — if `MYSQL_*` isn't configured, predictions simply aren't saved
-server-side (no impact on the prediction itself).
+Runs on http://127.0.0.1:8000. MySQL logging is optional — copy .env.example to .env and fill in MYSQL_* if you want it, otherwise predictions just won't be saved server-side and everything else still works.
 
-### 2. Frontend (UI)
+Frontend
 
-```bash
+bash
 cd frontend
 npm install
-npm run dev                    # serves http://localhost:5173
-```
+npm run dev
 
-By default the frontend calls the API at `http://127.0.0.1:8000/predict`.
-To point it elsewhere, set `VITE_API_URL` in `frontend/.env`.
+Runs on http://localhost:5173 and talks to the backend at http://127.0.0.1:8000/predict by default. If you want prediction history, add your own Supabase project's URL and anon key to frontend/.env (see .env.example).
 
-Prediction history in the UI is stored via Supabase (`VITE_SUPABASE_URL` /
-`VITE_SUPABASE_ANON_KEY` in `frontend/.env`). This is independent of the
-backend's optional MySQL storage — you can use either, both, or neither.
+Deploying
 
-## Deploying
+The frontend is a static Vite build, so Vercel works fine for it — it auto-detects the framework, vercel.json handles the rest. Add VITE_API_URL (and the Supabase vars if you're using history) under the project's environment variables.
 
-### Frontend → Vercel
+The backend is a different story — it's a real Python process with a ~25MB model loaded in memory, which doesn't fit well into Vercel's serverless functions. I've been running it on Render instead (render.yaml is included as a blueprint); Railway works too and will pick up the Procfile automatically. Either way, once it's deployed, point VITE_API_URL at <your-backend-url>/predict and set ALLOWED_ORIGINS on the backend to your actual frontend domain instead of leaving it wide open.
 
-1. Push the repo (or just the `frontend/` folder) to GitHub and import it in Vercel,
-   or run `vercel` from inside `frontend/` with the Vercel CLI.
-2. Vercel auto-detects Vite (a `vercel.json` is included to pin the build/output
-   settings and handle SPA routing).
-3. In the Vercel project's **Settings → Environment Variables**, add:
-   - `VITE_API_URL` — your deployed backend's `/predict` URL (see below)
-   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — if you want prediction history
-4. Deploy. Vercel only serves static files, so the FastAPI backend has to be
-   hosted separately (Vercel's serverless functions aren't a good fit for a
-   ~25MB scikit-learn model — see below).
+Model details
 
-### Backend → Render or Railway
+Features going into the model: age, gender, country (grouped into top 10 + "Other"), academic level, most-used platform, purpose of use, daily usage hours, daily unlocks, study hours, physical activity hours, sleep hours, and stress level. Random Forest regression, R² ≈ 0.87 on the test split. Full training process is in the notebook if you want to see the feature engineering or try swapping in a different model.
 
-The backend is a normal long-running FastAPI/uvicorn process, which Vercel
-doesn't support well. Render and Railway both work out of the box:
-
-**Render**
-1. New → Blueprint, point it at this repo — `backend/render.yaml` is picked
-   up automatically (root dir `backend/`, build `pip install -r requirements.txt`,
-   start `uvicorn main:app --host 0.0.0.0 --port $PORT`).
-2. Fill in the `MYSQL_*` env vars if you want history persistence, or leave
-   them blank — the API works fine without a database.
-3. Set `ALLOWED_ORIGINS` to your Vercel domain (e.g.
-   `https://mindpulse.vercel.app`) instead of `*` once you know it.
-
-**Railway**
-1. New Project → Deploy from GitHub, set the root directory to `backend/`.
-2. Railway reads the included `Procfile` automatically
-   (`web: uvicorn main:app --host 0.0.0.0 --port $PORT`).
-3. Add the same env vars as above under the service's Variables tab.
-
-Once the backend is live, copy its public URL + `/predict` into Vercel's
-`VITE_API_URL` and redeploy the frontend.
-
-## Model
-
-A Random Forest regression pipeline trained on the `training_data.csv`
-dataset (age, gender, country, academic level, platform, purpose of use,
-usage hours, unlocks, study hours, activity hours, sleep hours, and stress
-level). See `backend/model_training_notebook.ipynb` for the training
-process. Reported accuracy: R² = 0.87.
-
-This tool is for educational purposes only and is not a substitute for
-professional mental health advice.
+Known limitations
+Dataset is self-reported survey data, so there's inherent noise/bias in it
+No auth on the history feature right now — anyone with the Supabase anon key can read/write, fine for a personal project but not something I'd ship for real users
+The model doesn't account for a lot of things that obviously matter (family situation, existing diagnoses, etc.) — it's working off a fairly narrow set of features
