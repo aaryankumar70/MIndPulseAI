@@ -34,6 +34,7 @@ MindPulse/
     │   ├── supabase.ts
     │   └── types.ts
     └── package.json
+    
 Running it locally
 
 You need both halves running — the frontend just calls the backend for predictions, it doesn't do anything on its own.
