@@ -6,7 +6,6 @@ import {
   PURPOSES, STRESS_LEVELS, DEFAULT_VALUES,
 } from '../types';
 import { predictMentalHealth } from '../prediction';
-import { savePrediction } from '../supabase';
 import { ResultCard } from './ResultCard';
 
 interface Props {
@@ -24,44 +23,35 @@ export function PredictionForm({ onPredictionSaved }: Props) {
     setData(prev => ({ ...prev, [key]: value }));
   }
 
-  async function handleSubmit() {
-    setLoading(true);
-    setResult(null);
-    setSavedStatus('idle');
-    setError(null);
+ async function handleSubmit() {
+  setLoading(true);
+  setResult(null);
+  setSavedStatus('idle');
+  setError(null);
 
-    try {
-      const prediction = await predictMentalHealth(data);
-      setResult(prediction);
+  try {
+    const token = localStorage.getItem('mindpulse_token');
 
-      const saved = await savePrediction({
-        age: data.age,
-        gender: data.gender,
-        country: data.country,
-        academic_level: data.academic_level,
-        most_used_platform: data.most_used_platform,
-        purpose_of_use: data.purpose_of_use,
-        avg_daily_usage_hours: data.avg_daily_usage_hours,
-        daily_unlocks: data.daily_unlocks,
-        study_hours: data.study_hours,
-        physical_activity_hours: data.physical_activity_hours,
-        sleep_hours_per_night: data.sleep_hours_per_night,
-        stress_level: data.stress_level,
-        predicted_score: prediction.score,
-      });
-
-      setSavedStatus(saved ? 'saved' : 'failed');
-      if (saved) onPredictionSaved();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Could not reach the prediction service. Make sure the backend is running.'
-      );
-    } finally {
-      setLoading(false);
+    if (!token) {
+      throw new Error('You are not logged in. Please sign in again.');
     }
+
+    const prediction = await predictMentalHealth(data, token);
+
+    setResult(prediction);
+    setSavedStatus('saved');
+
+    onPredictionSaved();
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Could not reach the prediction service. Make sure the backend is running.'
+    );
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div id="predict" className="px-4 sm:px-6 py-8">

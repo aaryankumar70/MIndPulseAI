@@ -1,7 +1,7 @@
 import type { StudentData, PredictionResult, Recommendation, Insight } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/predict';
-
+const API_URL =
+  import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 /**
  * Score category logic
  */
@@ -122,24 +122,50 @@ export function getInsights(data: StudentData): Insight[] {
  * the trained Random Forest model) and shapes the response into the data
  * the UI needs: score, category, insights, and recommendations.
  */
-export async function predictMentalHealth(data: StudentData): Promise<PredictionResult> {
-  const response = await fetch(API_URL, {
+export async function predictMentalHealth(
+  data: StudentData,
+  token: string
+): Promise<PredictionResult> {
+  const response = await fetch(`${API_URL}/predict`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '');
-    throw new Error(`Prediction request failed (${response.status}). ${detail}`);
+    throw new Error(
+      `Prediction request failed (${response.status}). ${detail}`
+    );
   }
 
   const body = await response.json();
-  const score = Math.max(0, Math.min(10, Number(body.predicted_mental_health_score)));
 
-  const { category, colorClass, emoji } = getScoreCategory(score);
-  const recommendations = getRecommendations(score, data);
+  const score = Math.max(
+    0,
+    Math.min(
+      10,
+      Number(body.predicted_mental_health_score)
+    )
+  );
+
+  const { category, colorClass, emoji } =
+    getScoreCategory(score);
+
+  const recommendations =
+    getRecommendations(score, data);
+
   const insights = getInsights(data);
 
-  return { score, category, colorClass, emoji, recommendations, insights };
+  return {
+    score,
+    category,
+    colorClass,
+    emoji,
+    recommendations,
+    insights,
+  };
 }

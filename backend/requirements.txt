@@ -4,5 +4,7 @@ joblib
 pandas
 scikit-learn
 pydantic
-mysql-connector-python
 python-dotenv
+pymongo
+bcrypt
+python-jose[cryptography]
