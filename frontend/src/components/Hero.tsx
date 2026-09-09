@@ -37,7 +37,7 @@ export function Hero({ onStart }: { onStart: () => void }) {
         {/* Description */}
         <p className="text-base text-muted max-w-2xl mx-auto leading-relaxed mb-8 animate-fade-up delay-400">
           Understand how your social media habits, lifestyle, and stress levels impact your
-          mental well-being. Powered by Machine Learning with 87% accuracy.
+          mental well-being. 
         </p>
 
         {/* CTA */}

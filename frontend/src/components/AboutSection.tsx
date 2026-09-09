@@ -46,7 +46,7 @@ export function AboutSection() {
 
         <div className="neo-card mt-4 text-center">
           <p className="text-sm text-muted">
-            Model Accuracy: R² = 0.87 · Random Forest Pipeline · For educational purposes only
+            <strong className="text-secondary">Disclaimer:</strong> MindPulse is an educational tool and should not be used as a substitute for professional mental health advice or treatment. Always seek the guidance of a qualified mental health provider with any questions you may have regarding your mental health.
           </p>
         </div>
       </div>

@@ -80,11 +80,11 @@ export function PredictionForm({ onPredictionSaved }: Props) {
                 id="age"
                 type="number"
                 className="neo-input"
-                min={10}
-                max={100}
+                min={16}
+                max={26}
                 value={data.age}
-                onChange={e => update('age', Math.max(10, Math.min(100, Number(e.target.value) || 10)))}
-                aria-label="Your age (10 to 100)"
+                onChange={e => update('age', Math.max(16, Math.min(26, Number(e.target.value) || 16)))}
+                aria-label="Your age (16 to 26  years old)"
               />
             </div>
             <div className="neo-input-wrap">
