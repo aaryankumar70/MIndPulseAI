@@ -34,7 +34,7 @@ function App() {
               <strong className="text-secondary">MindPulse</strong> — Built with React, Vite & Machine Learning
             </p>
             <p className="text-xs text-muted mt-1">
-              Model Accuracy: R² = 0.87 · Random Forest Pipeline 
+              &copy; {new Date().getFullYear()} MindPulse. All rights reserved.
             </p>
           </div>
         </div>
