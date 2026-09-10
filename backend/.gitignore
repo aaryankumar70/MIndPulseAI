@@ -17,7 +17,7 @@ dist/
 dist-ssr/
 
 # Logs
-*.log
+*.log 
 
 # IDE
 .vscode/

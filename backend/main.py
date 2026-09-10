@@ -1,4 +1,5 @@
 import os
+import secrets
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Literal
@@ -14,14 +15,13 @@ from fastapi import (
     Depends,
 )
 from fastapi.security import (
-    HTTPBearer,
+    HTTPBearer, 
     HTTPAuthorizationCredentials,
 )
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
-
-from database import users_collection, predictions_collection, check_connection
+from database import users_collection, predictions_collection, tasks_collection
 from auth import (
     hash_password,
     verify_password,
@@ -159,7 +159,8 @@ def get_current_user(
 # ============================================================
 # STUDENT DATA
 # ============================================================
-
+class TaskSchedule(BaseModel):
+    scheduled_at: datetime
 class StudentData(BaseModel):
 
     age: int = Field(
@@ -238,8 +239,378 @@ class StudentData(BaseModel):
         "Very High",
         "High"
     ]
+    
+TASK_DEFINITIONS = {
+    "screen_time": {
+        "title": "Screen-Time Reset",
+        "description": "Take a short break from your phone or other screens and spend some time away from your usual digital activities.",
+        "type": "screen_time",
+        "target": 20,
+    },
+    "physical_activity": {
+        "title": "Movement Break",
+        "description": "Take a 30-minute walk, stretch, or do another comfortable form of physical activity.",
+        "type": "physical_activity",
+        "target": 30,
+    },
+    "sleep": {
+        "title": "Sleep Routine",
+        "description": "Start a calm pre-sleep routine and reduce screen use before going to bed.",
+        "type": "sleep",
+        "target": 30,
+    },
+    "stress": {
+        "title": "Breathing Break",
+        "description": "Take 10 minutes for slow breathing or a quiet mindfulness exercise.",
+        "type": "stress",
+        "target": 10,
+    },
+    "study": {
+        "title": "Focused Study Session",
+        "description": "Complete one focused study session without unnecessary phone interruptions.",
+        "type": "study",
+        "target": 30,
+    },
+}
+
+TASK_DEFINITIONS = {
+    ...
+}
 
 
+ACTIVITY_TYPES = {
+    "physical_activity": "movement",
+    "screen_time": "screen_break",
+    "sleep": "wind_down",
+    "stress": "breathing",
+    "study": "focus",
+    "social": "social",
+    "hydration": "hydration",
+}
+
+ACTIVITY_INSTRUCTIONS = {
+    "movement": [
+        "Find a comfortable place to walk or move.",
+        "Start the activity when you are ready.",
+        "Walk or move at a comfortable pace.",
+        "Continue for the target duration.",
+        "Stop when the timer reaches zero or when you are ready to finish."
+    ],
+    "screen_break": [
+        "Put your phone and other screens aside.",
+        "Move away from your usual screen.",
+        "Relax or do something away from the screen.",
+        "Continue until the timer finishes."
+    ],
+    "wind_down": [
+        "Put away your phone and other distracting screens.",
+        "Find a comfortable and quiet place.",
+        "Take some time to relax before sleep.",
+        "Continue the wind-down routine for the target duration."
+    ],
+    "breathing": [
+        "Sit comfortably and relax your shoulders.",
+        "Breathe in slowly.",
+        "Breathe out slowly.",
+        "Continue at a comfortable pace.",
+        "Stop if you feel uncomfortable."
+    ],
+    "focus": [
+        "Choose one study task to focus on.",
+        "Put unnecessary phone notifications aside.",
+        "Work on your chosen task without unnecessary interruptions.",
+        "Continue until the focus timer finishes."
+    ],
+    "social": [
+        "Choose someone you trust to talk with.",
+        "Start a conversation when you are comfortable.",
+        "Spend some time talking or connecting.",
+        "Finish when you feel the activity is complete."
+    ],
+    "hydration": [
+        "Get a glass of water.",
+        "Drink it at a comfortable pace.",
+        "Continue your normal hydration routine throughout the day."
+    ],
+}
+def generate_tasks(prediction):
+    """
+    Generate personalized well-being tasks from the user's
+    latest reported behavioral data.
+    """
+
+    tasks = []
+
+    screen_time = prediction.get("avg_daily_usage_hours", 0)
+    physical_activity = prediction.get("physical_activity_hours", 0)
+    sleep = prediction.get("sleep_hours_per_night", 0)
+    stress = str(prediction.get("stress_level", "")).strip().lower()
+    study = prediction.get("study_hours", 0)
+    unlocks = prediction.get("daily_unlocks", 0)
+
+    # =========================================================
+    # PHYSICAL ACTIVITY
+    # =========================================================
+
+    if physical_activity < 0.5:
+        tasks.append({
+            "title": "Morning Movement",
+            "description": "Take a 20–30 minute walk or light movement session at a comfortable pace.",
+            "type": "physical_activity",
+            "target": 30,
+            "unit": "minutes",
+            "suggested_time": "07:00"
+        })
+
+        tasks.append({
+            "title": "Quick Movement Break",
+            "description": "Take a short movement break and stretch or walk around.",
+            "type": "physical_activity",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "11:00"
+        })
+
+    elif physical_activity < 1:
+        tasks.append({
+            "title": "Active Break",
+            "description": "Take a short walk or do some light movement away from your usual study area.",
+            "type": "physical_activity",
+            "target": 15,
+            "unit": "minutes",
+            "suggested_time": "17:00"
+        })
+
+    # =========================================================
+    # SCREEN TIME
+    # =========================================================
+
+    if screen_time >= 8:
+        tasks.append({
+            "title": "Extended Screen Break",
+            "description": "Step away from your phone, computer, and other screens for a longer break.",
+            "type": "screen_time",
+            "target": 30,
+            "unit": "minutes",
+            "suggested_time": "18:00"
+        })
+
+    elif screen_time >= 6:
+        tasks.append({
+            "title": "Screen-Time Break",
+            "description": "Take a 20-minute break away from your phone and other screens.",
+            "type": "screen_time",
+            "target": 20,
+            "unit": "minutes",
+            "suggested_time": "18:00"
+        })
+
+    elif screen_time >= 4:
+        tasks.append({
+            "title": "Short Screen Break",
+            "description": "Step away from your screen for a short break before returning to your activities.",
+            "type": "screen_time",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "17:30"
+        })
+
+    # =========================================================
+    # PHONE UNLOCKS
+    # =========================================================
+
+    if unlocks >= 150:
+        tasks.append({
+            "title": "Phone-Free Focus",
+            "description": "Put your phone aside and spend some time on one activity without unnecessary interruptions.",
+            "type": "screen_time",
+            "target": 30,
+            "unit": "minutes",
+            "suggested_time": "15:00"
+        })
+
+    elif unlocks >= 100:
+        tasks.append({
+            "title": "Notification Break",
+            "description": "Silence unnecessary notifications and spend some time away from your phone.",
+            "type": "screen_time",
+            "target": 20,
+            "unit": "minutes",
+            "suggested_time": "15:00"
+        })
+
+    # =========================================================
+    # SLEEP
+    # =========================================================
+
+    if sleep < 5:
+        tasks.append({
+            "title": "Early Wind-Down",
+            "description": "Start winding down earlier and keep unnecessary screens away while preparing for sleep.",
+            "type": "sleep",
+            "target": 45,
+            "unit": "minutes",
+            "suggested_time": "21:30"
+        })
+
+    elif sleep < 7:
+        tasks.append({
+            "title": "Sleep Wind-Down",
+            "description": "Begin a calm screen-free wind-down routine before bedtime.",
+            "type": "sleep",
+            "target": 30,
+            "unit": "minutes",
+            "suggested_time": "22:00"
+        })
+
+    elif sleep < 8:
+        tasks.append({
+            "title": "Bedtime Wind-Down",
+            "description": "Take some quiet time away from screens before going to bed.",
+            "type": "sleep",
+            "target": 20,
+            "unit": "minutes",
+            "suggested_time": "22:30"
+        })
+
+    # =========================================================
+    # STRESS
+    # =========================================================
+
+    if stress in ("very high", "very_high"):
+        tasks.append({
+            "title": "Mindful Breathing",
+            "description": "Spend some quiet time practicing slow, comfortable breathing.",
+            "type": "stress",
+            "target": 15,
+            "unit": "minutes",
+            "suggested_time": "19:00"
+        })
+
+        tasks.append({
+            "title": "Quiet Reset",
+            "description": "Take a short quiet break away from screens and other distractions.",
+            "type": "stress",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "14:00"
+        })
+
+        tasks.append({
+            "title": "Talk With Someone",
+            "description": "Spend some time talking with someone you trust about how your day is going.",
+            "type": "social",
+            "target": 15,
+            "unit": "minutes",
+            "suggested_time": "20:00"
+        })
+
+    elif stress == "high":
+        tasks.append({
+            "title": "Mindful Breathing",
+            "description": "Spend some quiet time practicing slow, comfortable breathing.",
+            "type": "stress",
+            "target": 15,
+            "unit": "minutes",
+            "suggested_time": "19:00"
+        })
+
+        tasks.append({
+            "title": "Quiet Break",
+            "description": "Take a short break in a comfortable place without unnecessary screen distractions.",
+            "type": "stress",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "14:00"
+        })
+
+    elif stress == "medium":
+        tasks.append({
+            "title": "Breathing Break",
+            "description": "Take a few minutes to slow down and practice comfortable breathing.",
+            "type": "stress",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "19:00"
+        })
+
+    # Low stress does not require a stress-specific task.
+
+    # =========================================================
+    # STUDY BALANCE
+    # =========================================================
+
+    if study < 1:
+        tasks.append({
+            "title": "Focused Study",
+            "description": "Complete one short study session with unnecessary phone interruptions minimized.",
+            "type": "study",
+            "target": 25,
+            "unit": "minutes",
+            "suggested_time": "16:00"
+        })
+
+    elif study < 2:
+        tasks.append({
+            "title": "Focused Study",
+            "description": "Complete one focused study session with unnecessary phone interruptions minimized.",
+            "type": "study",
+            "target": 30,
+            "unit": "minutes",
+            "suggested_time": "16:00"
+        })
+
+    elif study >= 6:
+        tasks.append({
+            "title": "Study Recovery Break",
+            "description": "Take a proper break away from your study materials before continuing your work.",
+            "type": "study",
+            "target": 20,
+            "unit": "minutes",
+            "suggested_time": "17:00"
+        })
+
+    # =========================================================
+    # SOCIAL CONNECTION
+    # =========================================================
+
+    tasks.append({
+        "title": "Connect With Someone",
+        "description": "Spend 10–15 minutes talking with a parent, friend, or someone you trust.",
+        "type": "social",
+        "target": 15,
+        "unit": "minutes",
+        "suggested_time": "20:00"
+    })
+
+    # =========================================================
+    # HYDRATION
+    # =========================================================
+
+    tasks.append({
+        "title": "Hydration Check",
+        "description": "Take a moment to drink some water and maintain regular hydration throughout the day.",
+        "type": "hydration",
+        "target": 1,
+        "unit": "glass",
+        "suggested_time": "12:00"
+    })
+
+    # =========================================================
+    # FINAL SAFETY NET
+    # =========================================================
+
+    if not tasks:
+        tasks.append({
+            "title": "Take a Short Break",
+            "description": "Take a few minutes away from your usual routine to relax and reset.",
+            "type": "simple",
+            "target": 10,
+            "unit": "minutes",
+            "suggested_time": "15:00"
+        })
+
+    return tasks
 # ============================================================
 # PREDICTION RESPONSE
 # ============================================================
@@ -437,6 +808,9 @@ def predict(
         predicted_mental_health_score=score
     )
 
+
+ 
+
 @app.get("/history")
 def get_history(current_user=Depends(get_current_user)):
     history = list(
@@ -452,6 +826,7 @@ def get_history(current_user=Depends(get_current_user)):
     )
 
     return history
+
 @app.get("/trend")
 def get_trend(current_user=Depends(get_current_user)):
     records = list(
@@ -583,6 +958,508 @@ def get_trend(current_user=Depends(get_current_user)):
         "latest_date": latest["created_at"],
         "previous_date": previous["created_at"],
         "behavior_changes": behavior_changes,
+    }
+
+@app.get("/tasks")
+def get_tasks(current_user=Depends(get_current_user)):
+    # Get the user's latest prediction
+    latest_prediction = predictions_collection.find_one(
+        {"user_id": current_user["_id"]},
+        sort=[("created_at", -1)]
+    )
+
+    if not latest_prediction:
+        raise HTTPException(
+            status_code=404,
+            detail="No prediction found. Complete a prediction first."
+        )
+
+    # Generate the personalized task plan from the latest prediction
+    generated_tasks = generate_tasks(latest_prediction)
+
+    # Get tasks that already exist for this prediction
+    existing_tasks = list(
+        tasks_collection.find({
+            "user_id": current_user["_id"],
+            "prediction_id": latest_prediction["_id"]
+        })
+    )
+
+    # Create a lookup of existing tasks by type
+    existing_by_type = {
+        task["type"]: task
+        for task in existing_tasks
+    }
+
+    now = datetime.utcnow()
+
+    # Add any missing generated tasks
+    for generated_task in generated_tasks:
+        task_type = generated_task["type"]
+
+        if task_type in existing_by_type:
+            continue
+
+        task_document = {
+            "user_id": current_user["_id"],
+            "prediction_id": latest_prediction["_id"],
+            "title": generated_task["title"],
+            "qr_token": secrets.token_urlsafe(32),
+            "description": generated_task["description"],
+            "type": task_type,
+            "activity_type": ACTIVITY_TYPES.get(
+                task_type,
+                "simple"
+            ),
+            "target": generated_task["target"],
+            "unit": generated_task["unit"],
+            "suggested_time": generated_task["suggested_time"],
+            "status": "pending",
+            "created_at": now,
+            "scheduled_at": None,
+            "completed_at": None,
+        }
+
+        result = tasks_collection.insert_one(task_document)
+
+        task_document["_id"] = result.inserted_id
+        existing_by_type[task_type] = task_document
+
+    # Return all tasks belonging to the latest prediction
+    saved_tasks = []
+
+    for task in existing_by_type.values():
+        saved_tasks.append({
+            "id": str(task["_id"]),
+            "prediction_id": str(task["prediction_id"]),
+            "title": task["title"],
+            "description": task["description"],
+            "type": task["type"],
+            "activity_type": task.get("activity_type"),
+            "target": task["target"],
+            "unit": task.get("unit"),
+            "suggested_time": task.get("suggested_time"),
+            "status": task["status"],
+            "created_at": task["created_at"],
+            "scheduled_at": task.get("scheduled_at"),
+            "completed_at": task.get("completed_at"),
+            "qr_url": f"/task/qr/{task['qr_token']}"
+        })
+
+    return {
+        "tasks": saved_tasks
+    }
+@app.get("/plan")
+def get_plan(current_user=Depends(get_current_user)):
+    latest_prediction = predictions_collection.find_one(
+        {"user_id": current_user["_id"]},
+        sort=[("created_at", -1)]
+    )
+
+    if not latest_prediction:
+        raise HTTPException(
+            status_code=404,
+            detail="No prediction found. Complete a prediction first."
+        )
+
+    tasks = list(
+        tasks_collection.find({
+            "user_id": current_user["_id"],
+            "prediction_id": latest_prediction["_id"]
+        })
+    )
+
+    if not tasks:
+        raise HTTPException(
+            status_code=404,
+            detail="No tasks found for the latest prediction."
+        )
+
+    plan_token = latest_prediction.get("plan_token")
+
+    if not plan_token:
+        plan_token = secrets.token_urlsafe(32)
+
+        predictions_collection.update_one(
+            {"_id": latest_prediction["_id"]},
+            {"$set": {"plan_token": plan_token}}
+        )
+
+    return {
+        "plan_token": plan_token,
+        "tasks": [
+            {
+                "id": str(task["_id"]),
+                "title": task["title"],
+                "description": task["description"],
+                "activity_type": task.get("activity_type"),
+                "target": task["target"],
+                "unit": task.get("unit"),
+                "suggested_time": task.get("suggested_time"),
+                "status": task["status"],
+                "scheduled_at": task.get("scheduled_at"),
+            }
+            for task in tasks
+        ]
+    }
+@app.get("/plan/qr/{plan_token}")
+def get_plan_by_qr(plan_token: str):
+    prediction = predictions_collection.find_one({
+        "plan_token": plan_token
+    })
+
+    if not prediction:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found."
+        )
+
+    tasks = list(
+        tasks_collection.find({
+            "user_id": prediction["user_id"],
+            "prediction_id": prediction["_id"]
+        })
+    )
+
+    return {
+        "tasks": [
+            {
+                "id": str(task["_id"]),
+                "title": task["title"],
+                "description": task["description"],
+                "activity_type": task.get("activity_type"),
+                "target": task["target"],
+                "unit": task.get("unit"),
+                "suggested_time": task.get("suggested_time"),
+                "status": task["status"],
+                "scheduled_at": task.get("scheduled_at"),
+            }
+            for task in tasks
+        ]
+    }
+@app.get("/plan/qr/{plan_token}/task/{task_id}")
+def get_plan_task_by_qr(plan_token: str, task_id: str):
+    prediction = predictions_collection.find_one({
+        "plan_token": plan_token
+    })
+
+    if not prediction:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found."
+        )
+
+    try:
+        task_object_id = ObjectId(task_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task ID."
+        )
+
+    task = tasks_collection.find_one({
+        "_id": task_object_id,
+        "user_id": prediction["user_id"],
+        "prediction_id": prediction["_id"]
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found in this plan."
+        )
+
+    return {
+        "task_id": str(task["_id"]),
+        "prediction_id": str(task["prediction_id"]),
+        "title": task["title"],
+        "description": task["description"],
+        "activity_type": task.get("activity_type"),
+        "target": task["target"],
+        "unit": task.get("unit"),
+        "suggested_time": task.get("suggested_time"),
+        "scheduled_at": task.get("scheduled_at"),
+        "status": task["status"],
+    }
+@app.post("/plan/qr/{plan_token}/task/{task_id}/complete")
+def complete_plan_task_by_qr(
+    plan_token: str,
+    task_id: str
+):
+    prediction = predictions_collection.find_one({
+        "plan_token": plan_token
+    })
+
+    if not prediction:
+        raise HTTPException(
+            status_code=404,
+            detail="Plan not found."
+        )
+
+    try:
+        task_object_id = ObjectId(task_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task ID."
+        )
+
+    task = tasks_collection.find_one({
+        "_id": task_object_id,
+        "user_id": prediction["user_id"],
+        "prediction_id": prediction["_id"]
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found in this plan."
+        )
+
+    if task["status"] == "completed":
+        return {
+            "message": "Task already completed.",
+            "task_id": task_id,
+            "status": "completed"
+        }
+
+    from datetime import datetime, timezone
+
+    completed_at = datetime.now(timezone.utc)
+
+    tasks_collection.update_one(
+        {"_id": task_object_id},
+        {
+            "$set": {
+                "status": "completed",
+                "completed_at": completed_at
+            }
+        }
+    )
+
+    return {
+        "message": "Task completed successfully.",
+        "task_id": task_id,
+        "status": "completed",
+        "completed_at": completed_at
+    }
+@app.post("/tasks/{task_id}/schedule")
+def schedule_task(
+    task_id: str,
+    schedule: TaskSchedule,
+    current_user=Depends(get_current_user)
+):
+    # Validate MongoDB task ID
+    try:
+        task_object_id = ObjectId(task_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task ID."
+        )
+
+    # Find the task and make sure it belongs to the logged-in user
+    task = tasks_collection.find_one({
+        "_id": task_object_id,
+        "user_id": current_user["_id"]
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found."
+        )
+
+    # Don't allow scheduling a completed task
+    if task.get("status") == "completed":
+        raise HTTPException(
+            status_code=400,
+            detail="Completed tasks cannot be scheduled."
+        )
+
+    # Save the selected schedule
+    tasks_collection.update_one(
+        {
+            "_id": task_object_id,
+            "user_id": current_user["_id"]
+        },
+        {
+            "$set": {
+                "scheduled_at": schedule.scheduled_at
+            }
+        }
+    )
+
+    return {
+        "message": "Task scheduled successfully.",
+        "task_id": task_id,
+        "scheduled_at": schedule.scheduled_at
+    }
+    
+@app.post("/tasks/migrate-activities")
+def migrate_task_activities(
+    current_user=Depends(get_current_user)
+):
+    activity_map = {
+        "physical_activity": "movement",
+        "screen_time": "screen_break",
+        "sleep": "wind_down",
+        "stress": "breathing",
+        "study": "focus",
+        "social": "social",
+        "hydration": "hydration",
+    }
+
+    tasks = tasks_collection.find({
+        "user_id": current_user["_id"]
+    })
+
+    updated_count = 0
+
+    for task in tasks:
+        task_type = task.get("type")
+
+        if task_type in activity_map:
+            tasks_collection.update_one(
+                {
+                    "_id": task["_id"],
+                    "user_id": current_user["_id"]
+                },
+                {
+                    "$set": {
+                        "activity_type": activity_map[task_type]
+                    }
+                }
+            )
+
+            updated_count += 1
+
+    return {
+        "message": "Task activity types updated successfully.",
+        "updated_count": updated_count
+    }
+@app.get("/task/qr/{qr_token}")
+def get_task_by_qr(qr_token: str):
+    task = tasks_collection.find_one({
+        "qr_token": qr_token
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found."
+        )
+
+    return {
+        "task_id": str(task["_id"]),
+        "title": task["title"],
+        "description": task["description"],
+        "activity_type": task.get("activity_type"),
+        "target": task["target"],
+        "unit": task.get("unit"),
+        "suggested_time": task.get("suggested_time"),
+        "status": task["status"]
+    }
+@app.get("/tasks/{task_id}/activity")
+def get_task_activity(
+    task_id: str,
+    current_user=Depends(get_current_user)
+):
+    try:
+        task_object_id = ObjectId(task_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task ID."
+        )
+
+    task = tasks_collection.find_one({
+        "_id": task_object_id,
+        "user_id": current_user["_id"]
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found."
+        )
+
+    activity_type = task.get("activity_type")
+
+    if not activity_type:
+        raise HTTPException(
+            status_code=400,
+            detail="Activity type is not configured for this task."
+        )
+
+    return {
+        "task_id": str(task["_id"]),
+        "title": task["title"],
+        "description": task["description"],
+        "activity_type": activity_type,
+        "instructions": ACTIVITY_INSTRUCTIONS.get(
+    activity_type,
+    []
+),
+        "target": task["target"],
+        "unit": task.get("unit"),
+        "suggested_time": task.get("suggested_time"),
+        "scheduled_at": task.get("scheduled_at"),
+        "status": task["status"]
+    }
+@app.post("/tasks/{task_id}/complete")
+def complete_task(
+    task_id: str,
+    current_user=Depends(get_current_user)
+):
+    try:
+        task_object_id = ObjectId(task_id)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task ID."
+        )
+
+    # Find the task AND make sure it belongs to the logged-in user
+    task = tasks_collection.find_one({
+        "_id": task_object_id,
+        "user_id": current_user["_id"]
+    })
+
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found."
+        )
+
+    if task.get("status") == "completed":
+        return {
+            "message": "Task already completed.",
+            "task_id": task_id,
+            "status": "completed",
+            "completed_at": task.get("completed_at")
+        }
+
+    completed_at = datetime.utcnow()
+
+    tasks_collection.update_one(
+        {
+            "_id": task_object_id,
+            "user_id": current_user["_id"]
+        },
+        {
+            "$set": {
+                "status": "completed",
+                "completed_at": completed_at
+            }
+        }
+    )
+
+    return {
+        "message": "Task completed successfully.",
+        "task_id": task_id,
+        "status": "completed",
+        "completed_at": completed_at
     }
 # ============================================================
 # RUN SERVER
