@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { TasksSection } from '@/components/TasksSection';
+import { ActivityPage } from '@/components/ActivityPage';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { PredictionForm } from '@/components/PredictionForm';
@@ -6,6 +8,7 @@ import { HistorySection } from '@/components/HistorySection';
 import { AboutSection } from '@/components/AboutSection';
 import { LoginPage } from '@/components/LoginPage';
 import { RegisterPage } from '@/components/RegisterPage';
+import { MobilePlanPage } from '@/components/MobilePlanPage';
 
 interface User {
   id: string;
@@ -17,7 +20,15 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authPage, setAuthPage] = useState<'login' | 'register'>('login');
   const [historyKey, setHistoryKey] = useState(0);
+  const [selectedTask, setSelectedTask] =
+    useState<null | import('@/types').WellbeingTask>(null);
   const predictRef = useRef<HTMLDivElement>(null);
+
+  const planMatch = window.location.pathname.match(/^\/plan\/([^/]+)$/);
+
+  if (planMatch) {
+    return <MobilePlanPage planToken={planMatch[1]} />;
+  }
 
   useEffect(() => {
     const savedUser = localStorage.getItem('mindpulse_user');
@@ -93,7 +104,25 @@ function App() {
       />
     );
   }
+   if (selectedTask) {
+  return (
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--neo-bg)' }}
+    >
+      <Header
+        user={user}
+        onLogout={handleLogout}
+      />
 
+      <ActivityPage
+        task={selectedTask}
+        onBack={() => setSelectedTask(null)}
+        onCompleted={() => setSelectedTask(null)}
+      />
+    </div>
+  );
+}
   return (
     <div
       className="min-h-screen"
@@ -112,7 +141,15 @@ function App() {
         />
       </div>
 
-      <HistorySection key={historyKey} />
+     <HistorySection key={historyKey} />
+
+<TasksSection
+  refreshKey={historyKey}
+  onStartActivity={(task) => {
+    setSelectedTask(task);
+  }}
+/>
+
 
       <AboutSection />
 

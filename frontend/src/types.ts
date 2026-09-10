@@ -86,3 +86,48 @@ export const DEFAULT_VALUES: StudentData = {
   sleep_hours_per_night: 7.0,
   stress_level: 'Medium',
 };
+export interface WellbeingTask {
+  id: string;
+  prediction_id: string;
+  title: string;
+  description: string;
+  type: string;
+  activity_type: string;
+  target: number;
+  unit: string | null;
+  suggested_time: string | null;
+  status: 'pending' | 'completed';
+  created_at: string;
+  scheduled_at: string | null;
+  completed_at: string | null;
+  qr_url: string;
+}
+
+export interface TaskActivity {
+  task_id: string;
+  title: string;
+  description: string;
+  activity_type: string;
+  instructions: string[];
+  target: number;
+  unit: string | null;
+  suggested_time: string | null;
+  scheduled_at: string | null;
+  status: 'pending' | 'completed';
+}
+export interface PlanTask {
+  id: string;
+  title: string;
+  description: string;
+  activity_type: string;
+  target: number;
+  unit: string | null;
+  suggested_time: string | null;
+  status: 'pending' | 'completed';
+  scheduled_at: string | null;
+}
+
+export interface WellbeingPlan {
+  plan_token: string;
+  tasks: PlanTask[];
+}
