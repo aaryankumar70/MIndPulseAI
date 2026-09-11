@@ -301,7 +301,7 @@ export function ActivityPage({
               <p className="text-sm font-bold text-accent uppercase tracking-wider">
                 MindPulse Activity
               </p>
-
+      
               <h1 className="text-3xl sm:text-4xl font-black mt-3">
                 {activity.title}
               </h1>

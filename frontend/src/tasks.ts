@@ -111,3 +111,59 @@ export async function getPlan(
 
   return handleResponse<WellbeingPlan>(response);
 }
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+export async function sendChatMessage(
+  message: string,
+  history: ChatMessage[],
+  token: string
+): Promise<string> {
+  const response = await fetch(`${API_URL}/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      message,
+      history,
+    }),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Chat request failed (${response.status})`;
+
+    try {
+      const data = await response.json();
+
+      console.error(
+        'Chat API validation error:',
+        data
+      );
+
+      if (Array.isArray(data.detail)) {
+        errorMessage = data.detail
+          .map((error: any) => {
+            const location = error.loc
+              ? error.loc.join('.')
+              : 'request';
+
+            return `${location}: ${error.msg}`;
+          })
+          .join('\n');
+      } else if (data.detail) {
+        errorMessage = String(data.detail);
+      }
+    } catch {
+      // Keep the status-based error message.
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+
+  return data.response;
+}

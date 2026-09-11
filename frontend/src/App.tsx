@@ -9,6 +9,7 @@ import { AboutSection } from '@/components/AboutSection';
 import { LoginPage } from '@/components/LoginPage';
 import { RegisterPage } from '@/components/RegisterPage';
 import { MobilePlanPage } from '@/components/MobilePlanPage';
+import { Chatbot } from '@/components/Chatbot';
 
 interface User {
   id: string;
@@ -18,20 +19,24 @@ interface User {
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [authPage, setAuthPage] = useState<'login' | 'register'>('login');
+  const [authPage, setAuthPage] =
+    useState<'login' | 'register'>('login');
   const [historyKey, setHistoryKey] = useState(0);
   const [selectedTask, setSelectedTask] =
     useState<null | import('@/types').WellbeingTask>(null);
+
   const predictRef = useRef<HTMLDivElement>(null);
 
-  const planMatch = window.location.pathname.match(/^\/plan\/([^/]+)$/);
+  const planMatch =
+    window.location.pathname.match(/^\/plan\/([^/]+)$/);
 
   if (planMatch) {
     return <MobilePlanPage planToken={planMatch[1]} />;
   }
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('mindpulse_user');
+    const savedUser =
+      localStorage.getItem('mindpulse_user');
 
     if (savedUser) {
       try {
@@ -48,6 +53,7 @@ function App() {
     loggedInUser: User
   ) {
     localStorage.setItem('mindpulse_token', token);
+
     localStorage.setItem(
       'mindpulse_user',
       JSON.stringify(loggedInUser)
@@ -61,6 +67,7 @@ function App() {
     registeredUser: User
   ) {
     localStorage.setItem('mindpulse_token', token);
+
     localStorage.setItem(
       'mindpulse_user',
       JSON.stringify(registeredUser)
@@ -72,6 +79,7 @@ function App() {
   function handleLogout() {
     localStorage.removeItem('mindpulse_token');
     localStorage.removeItem('mindpulse_user');
+
     setUser(null);
     setAuthPage('login');
   }
@@ -104,29 +112,35 @@ function App() {
       />
     );
   }
-   if (selectedTask) {
-  return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: 'var(--neo-bg)' }}
-    >
-      <Header
-        user={user}
-        onLogout={handleLogout}
-      />
 
-      <ActivityPage
-        task={selectedTask}
-        onBack={() => setSelectedTask(null)}
-        onCompleted={() => setSelectedTask(null)}
-      />
-    </div>
-  );
-}
+  if (selectedTask) {
+    return (
+      <div
+        className="min-h-screen"
+        style={{
+          backgroundColor: 'var(--neo-bg)',
+        }}
+      >
+        <Header
+          user={user}
+          onLogout={handleLogout}
+        />
+
+        <ActivityPage
+          task={selectedTask}
+          onBack={() => setSelectedTask(null)}
+          onCompleted={() => setSelectedTask(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen"
-      style={{ backgroundColor: 'var(--neo-bg)' }}
+      style={{
+        backgroundColor: 'var(--neo-bg)',
+      }}
     >
       <Header
         user={user}
@@ -141,17 +155,18 @@ function App() {
         />
       </div>
 
-     <HistorySection key={historyKey} />
+      <HistorySection key={historyKey} />
 
-<TasksSection
-  refreshKey={historyKey}
-  onStartActivity={(task) => {
-    setSelectedTask(task);
-  }}
-/>
-
+      <TasksSection
+        refreshKey={historyKey}
+        onStartActivity={(task) => {
+          setSelectedTask(task);
+        }}
+      />
 
       <AboutSection />
+
+      <Chatbot />
 
       <footer className="px-4 sm:px-6 py-8">
         <div className="mx-auto max-w-4xl">
@@ -166,7 +181,8 @@ function App() {
             </p>
 
             <p className="text-xs text-muted mt-1">
-              &copy; {new Date().getFullYear()} MindPulse. All rights reserved.
+              &copy; {new Date().getFullYear()} MindPulse.
+              All rights reserved.
             </p>
           </div>
         </div>
