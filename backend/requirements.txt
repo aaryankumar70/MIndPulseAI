@@ -5,6 +5,7 @@ pandas
 scikit-learn
 pydantic
 python-dotenv
+groq
 pymongo
 bcrypt
 python-jose[cryptography]
