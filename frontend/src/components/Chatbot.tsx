@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
+import { Brain, Send, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { sendChatMessage } from '@/tasks';
 
@@ -141,19 +142,20 @@ export function Chatbot() {
             fixed bottom-5 right-5 z-50
             flex h-14 w-14 items-center justify-center
             rounded-full
-            border-2 border-black
-            bg-white
-            text-2xl
-            shadow-[4px_4px_0px_#000]
+            neo-card-sm
+            !p-0
+            bg-[var(--neo-bg)]
+            text-accent
+            shadow-[6px_6px_12px_var(--neo-dark),-6px_-6px_12px_var(--neo-light)]
             transition-all duration-200
             hover:-translate-y-1
-            hover:shadow-[5px_5px_0px_#000]
-            active:translate-x-1
-            active:translate-y-1
-            active:shadow-[2px_2px_0px_#000]
+            hover:text-accent-light
+            hover:shadow-[8px_8px_16px_var(--neo-dark),-8px_-8px_16px_var(--neo-light)]
+            active:translate-y-0.5
+            active:shadow-[inset_3px_3px_6px_var(--neo-dark),inset_-3px_-3px_6px_var(--neo-light)]
           "
         >
-          🌱
+          <Brain className="w-6 h-6" strokeWidth={2.5} />
         </button>
       )}
 
@@ -166,30 +168,37 @@ export function Chatbot() {
             max-w-[calc(100vw-24px)]
             flex-col
             overflow-hidden
-            rounded-2xl
-            border-2 border-black
-            bg-white
-            shadow-[6px_6px_0px_#000]
+            rounded-[1.5rem]
+            neo-card
+            !p-0
+            bg-[var(--neo-bg)]
+            shadow-[10px_10px_20px_var(--neo-dark),-10px_-10px_20px_var(--neo-light)]
           "
         >
           {/* Header */}
           <div
             className="
               flex items-center justify-between
-              border-b-2 border-black
-              bg-[var(--neo-accent)]
+              border-b border-[var(--neo-bg-dark)]
+              bg-[var(--neo-bg)]
+              shadow-[0_4px_10px_rgba(168,179,196,0.22)]
               px-4 py-3
             "
           >
             <div className="flex items-center gap-2">
-              <span className="text-xl">🌱</span>
+              <div className="neo-inset-sm !p-2 rounded-xl">
+                <Brain
+                  className="w-5 h-5 text-accent"
+                  strokeWidth={2.5}
+                />
+              </div>
 
               <div>
-                <h3 className="font-bold text-black">
+                <h3 className="font-bold text-primary">
                   MindPulse Companion
                 </h3>
 
-                <p className="text-xs text-black/70">
+                <p className="text-xs text-muted">
                   Your well-being assistant
                 </p>
               </div>
@@ -201,11 +210,10 @@ export function Chatbot() {
               aria-label="Close chatbot"
               className="
                 flex h-8 w-8 items-center justify-center
-                rounded-lg
-                border-2 border-black
-                bg-white
-                font-bold
-                text-black
+                neo-btn
+                !p-2
+                rounded-xl
+                text-primary
                 transition-transform
                 hover:-translate-y-0.5
               "
@@ -230,7 +238,7 @@ export function Chatbot() {
                 return (
                   <div
                     key={`${message.role}-${index}`}
-                    className={`flex ${
+                    className={`flex w-full ${
                       isUser
                         ? 'justify-end'
                         : 'justify-start'
@@ -238,16 +246,14 @@ export function Chatbot() {
                   >
                     <div
                       className={`
-                        max-w-[84%]
+                        max-w-[92%]
                         rounded-2xl
-                        border-2 border-black
-                        px-4 py-3
+                        px-5 py-3.5
                         text-sm
                         leading-6
-                        ${
-                          isUser
-                            ? 'rounded-br-sm bg-black text-white'
-                            : 'rounded-bl-sm bg-white text-black'
+                        ${isUser
+                          ? 'rounded-br-sm bg-[var(--neo-accent)] text-white shadow-[4px_4px_8px_var(--neo-dark),-3px_-3px_8px_var(--neo-light)]'
+                          : 'rounded-bl-sm neo-inset-sm text-primary'
                         }
                       `}
                     >
@@ -375,9 +381,9 @@ export function Chatbot() {
           <form
             onSubmit={handleSend}
             className="
-              flex gap-2
-              border-t-2 border-black
-              bg-white
+              flex items-center gap-2
+              border-t border-[var(--neo-bg-dark)]
+              bg-[var(--neo-bg)]
               p-3
             "
           >
@@ -395,16 +401,13 @@ export function Chatbot() {
               className="
                 min-w-0
                 flex-1
-                rounded-xl
-                border-2 border-black
-                bg-white
+                neo-input
                 px-3 py-2
                 text-sm
-                text-black
+                text-primary
                 outline-none
-                placeholder:text-gray-500
-                focus:ring-2
-                focus:ring-black
+                placeholder:text-muted
+                focus:shadow-[inset_4px_4px_8px_var(--neo-dark),inset_-4px_-4px_8px_var(--neo-light)]
                 disabled:opacity-50
               "
             />
@@ -417,21 +420,21 @@ export function Chatbot() {
                 !token
               }
               className="
+                neo-btn neo-btn-primary
+                !p-2.5
+                shrink-0
                 rounded-xl
-                border-2 border-black
-                bg-black
-                px-4
-                py-2
-                text-sm
-                font-bold
-                text-white
                 transition-all
+                duration-200
                 hover:-translate-y-0.5
+                active:translate-y-0
                 disabled:cursor-not-allowed
                 disabled:opacity-40
               "
+              aria-label="Send message"
+              title="Send message"
             >
-              Send
+              <Send className="w-4 h-4" />
             </button>
           </form>
         </div>

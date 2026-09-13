@@ -1,5 +1,5 @@
-
-import { Brain, LogOut, User } from 'lucide-react';
+import { useState } from 'react';
+import { Brain, LogOut, User, ChevronDown } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -13,6 +13,8 @@ interface HeaderProps {
 }
 
 export function Header({ user, onLogout }: HeaderProps) {
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 px-4 py-4 sm:px-6">
       <div className="mx-auto max-w-6xl">
@@ -97,10 +99,13 @@ export function Header({ user, onLogout }: HeaderProps) {
               </a>
             </nav>
 
-            {/* User profile */}
-            <div className="flex items-center gap-2 ml-2">
-
-              <div
+            {/* User profile toggle */}
+            <div className="relative ml-2">
+              <button
+                type="button"
+                onClick={() => setShowProfileMenu((open) => !open)}
+                aria-expanded={showProfileMenu}
+                aria-label="Open user menu"
                 className="
                   hidden sm:flex
                   items-center
@@ -108,56 +113,74 @@ export function Header({ user, onLogout }: HeaderProps) {
                   neo-inset-sm
                   !px-3
                   !py-2
-                  transition-all
-                  duration-200
-                  ease-out
-                  hover:-translate-y-0.5
-                  hover:shadow-[4px_4px_8px_var(--neo-dark),-4px_-4px_8px_var(--neo-light)]
-                "
-              >
-                <User className="w-4 h-4 text-accent" />
-
-                <div className="leading-tight">
-                  <p className="text-xs font-bold text-primary">
-                    {user.name}
-                  </p>
-
-                  <p className="text-[10px] text-muted">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-
-              {/* Logout */}
-              <button
-                type="button"
-                onClick={onLogout}
-                title="Sign out"
-                className="
-                  neo-btn
-                  !px-3
-                  !py-2
+                  min-w-[8rem]
+                  justify-center
                   transition-all
                   duration-200
                   ease-out
                   hover:-translate-y-0.5
                   hover:text-accent
-                  hover:shadow-[5px_5px_10px_var(--neo-dark),-5px_-5px_10px_var(--neo-light)]
+                  hover:shadow-[4px_4px_8px_var(--neo-dark),-4px_-4px_8px_var(--neo-light)]
                   active:translate-y-0
-                  active:shadow-[inset_3px_3px_6px_var(--neo-dark),inset_-3px_-3px_6px_var(--neo-light)]
                 "
               >
-                <LogOut className="w-4 h-4" />
+                <User className="w-4 h-4 text-accent" />
 
-                <span className="hidden sm:inline">
-                  Logout
-                </span>
+                <p className="text-xs font-bold text-primary">
+                  {user.name}
+                </p>
+
+                <ChevronDown
+                  className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                    showProfileMenu ? 'rotate-180' : ''
+                  }`}
+                />
               </button>
 
+              {/* Logout dropdown */}
+              {showProfileMenu && (
+                <div
+                  className="
+                    absolute
+                    right-0
+                    top-[calc(100%+0.75rem)]
+                    w-40
+                    neo-card-sm
+                    !p-2
+                    z-50
+                  "
+                >
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="
+                      w-full
+                      flex
+                      items-center
+                      gap-2
+                      rounded-xl
+                      !px-3
+                      !py-2
+                      text-sm
+                      text-secondary
+                      transition-all
+                      duration-200
+                      hover:text-accent
+                      hover:bg-[var(--neo-bg-light)]
+                      active:scale-[0.98]
+                    "
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
+
           </div>
         </div>
       </div>
     </header>
   );
 }
+  

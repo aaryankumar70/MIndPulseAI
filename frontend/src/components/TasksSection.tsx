@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getTasks, getPlan } from '@/tasks';
@@ -143,10 +142,10 @@ export function TasksSection({
               </button>
 
               {showPlanQr && planToken && (
-                <div className="neo-inset-sm mt-6 inline-flex flex-col items-center gap-3 p-6">
+                <div className="neo-inset-sm mx-auto mt-6 flex w-fit flex-col items-center gap-3 p-4">
                   <QRCodeCanvas
                     value={`${window.location.origin}/plan/${planToken}`}
-                    size={240}
+                    size={180}
                     level="M"
                   />
 
