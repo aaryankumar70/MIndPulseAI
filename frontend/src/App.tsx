@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { TasksSection } from '@/components/TasksSection';
 import { ActivityPage } from '@/components/ActivityPage';
@@ -6,8 +7,7 @@ import { Hero } from '@/components/Hero';
 import { PredictionForm } from '@/components/PredictionForm';
 import { HistorySection } from '@/components/HistorySection';
 import { AboutSection } from '@/components/AboutSection';
-import { LoginPage } from '@/components/LoginPage';
-import { RegisterPage } from '@/components/RegisterPage';
+import { AuthPage } from '@/components/AuthPage';
 import { MobilePlanPage } from '@/components/MobilePlanPage';
 import { Chatbot } from '@/components/Chatbot';
 
@@ -19,9 +19,8 @@ interface User {
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [authPage, setAuthPage] =
-    useState<'login' | 'register'>('login');
   const [historyKey, setHistoryKey] = useState(0);
+
   const [selectedTask, setSelectedTask] =
     useState<null | import('@/types').WellbeingTask>(null);
 
@@ -52,7 +51,10 @@ function App() {
     token: string,
     loggedInUser: User
   ) {
-    localStorage.setItem('mindpulse_token', token);
+    localStorage.setItem(
+      'mindpulse_token',
+      token
+    );
 
     localStorage.setItem(
       'mindpulse_user',
@@ -66,7 +68,10 @@ function App() {
     token: string,
     registeredUser: User
   ) {
-    localStorage.setItem('mindpulse_token', token);
+    localStorage.setItem(
+      'mindpulse_token',
+      token
+    );
 
     localStorage.setItem(
       'mindpulse_user',
@@ -81,7 +86,6 @@ function App() {
     localStorage.removeItem('mindpulse_user');
 
     setUser(null);
-    setAuthPage('login');
   }
 
   function scrollToPredict() {
@@ -95,24 +99,24 @@ function App() {
     setHistoryKey((k) => k + 1);
   }
 
+  /*
+   * Authentication
+   *
+   * AuthPage handles the animated
+   * Login <-> Register transition.
+   */
   if (!user) {
-    if (authPage === 'login') {
-      return (
-        <LoginPage
-          onLogin={handleLogin}
-          onRegister={() => setAuthPage('register')}
-        />
-      );
-    }
-
     return (
-      <RegisterPage
+      <AuthPage
+        onLogin={handleLogin}
         onRegister={handleRegister}
-        onLogin={() => setAuthPage('login')}
       />
     );
   }
 
+  /*
+   * Activity page
+   */
   if (selectedTask) {
     return (
       <div
@@ -135,6 +139,9 @@ function App() {
     );
   }
 
+  /*
+   * Main dashboard
+   */
   return (
     <div
       className="min-h-screen"
