@@ -176,7 +176,7 @@ export function AuthPage({
 
       {/* Desktop auth shell */}
       <div className="relative min-h-screen flex items-center justify-center px-4 py-4 sm:px-6 lg:py-3">
-        <div className="w-full max-w-6xl">
+        <div className="w-full max-w-[1400px]">
           <div className="relative h-[calc(100vh-2rem)] min-h-[620px] max-h-[760px] overflow-hidden rounded-[2rem]">
 
             {/* =====================================================
@@ -217,7 +217,7 @@ export function AuthPage({
               </div>
 
               {/* ONLY THE CONTENT BELOW THE BRAND MOVES */}
-              <div className="absolute left-8 right-8 xl:left-10 xl:right-10 top-[8.5rem] bottom-6">
+              <div className="absolute left-8 right-0 xl:left-10 xl:right-0 top-[8.5rem] bottom-6">
                 {/* Login content */}
                 <div
                   className={`
@@ -243,7 +243,7 @@ export function AuthPage({
                     </span>
                   </h2>
 
-                  <p className="text-muted text-base xl:text-lg leading-relaxed mt-5 max-w-lg">
+                  <p className="text-muted text-base xl:text-lg leading-relaxed mt-5 max-w-xl">
                     MindPulseAI turns your everyday student
                     habits into meaningful insights, personalized
                     activities, and practical next steps.
@@ -295,7 +295,7 @@ export function AuthPage({
                     </span>
                   </h2>
 
-                  <p className="text-muted text-base xl:text-lg leading-relaxed mt-5 max-w-lg">
+                  <p className="text-muted text-base xl:text-lg leading-relaxed mt-5 max-w-xl">
                     Create your MindPulse account and turn your
                     everyday student habits into meaningful
                     insights and practical next steps.
