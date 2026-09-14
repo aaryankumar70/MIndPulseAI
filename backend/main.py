@@ -23,7 +23,12 @@ from fastapi.security import (
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel, Field
-from database import users_collection, predictions_collection, tasks_collection
+from database import (
+    users_collection,
+    predictions_collection,
+    tasks_collection,
+    check_connection,
+)
 from auth import (
     hash_password,
     verify_password,
@@ -1268,6 +1273,8 @@ Examples where web search may be useful:
 - Recent studies
 - Current information about apps or platforms that affects
   student well-being
+- how to improve study habits, sleep, or stress management
+- how to improve physical activity, social connection, or hydration
 
 Do not search the web for information that is already available
 from the user's MindPulse data unless external information would
@@ -1367,6 +1374,8 @@ STRICT RULES:
 
 21. Maximum response length: approximately 180 words. Prefer
     concise answers with 3–5 practical points.
+    
+22. If the user asks for any information outside the scope of MindPulse student well-being eg : adult actresses, mental health of X person or any thing unrelated to student well-being, respond with: "I'm focused on providing support for student well-being and cannot assist with that request.
 """
 
     # --------------------------------------------------------
