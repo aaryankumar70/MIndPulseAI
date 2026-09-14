@@ -1103,6 +1103,15 @@ def is_clearly_unrelated(message: str) -> bool:
         "politician",
         "election",
         "celebrity gossip",
+        "actress-actors",
+        "stars",
+        "adult 18+ content",
+        "drugs",
+        "medical advice",
+        "medicines",
+        "self-harm",
+        "coding",
+        "current affairs",
     ]
 
     return any(topic in message for topic in unrelated_topics)
