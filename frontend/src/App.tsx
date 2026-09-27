@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 import { TasksSection } from '@/components/TasksSection';
 import { ActivityPage } from '@/components/ActivityPage';
@@ -10,6 +9,7 @@ import { AboutSection } from '@/components/AboutSection';
 import { AuthPage } from '@/components/AuthPage';
 import { MobilePlanPage } from '@/components/MobilePlanPage';
 import { Chatbot } from '@/components/Chatbot';
+import StressAssessment from '@/components/StressAssessment';
 
 interface User {
   id: string;
@@ -23,6 +23,9 @@ function App() {
 
   const [selectedTask, setSelectedTask] =
     useState<null | import('@/types').WellbeingTask>(null);
+
+  const [showStressAssessment, setShowStressAssessment] =
+    useState(false);
 
   const predictRef = useRef<HTMLDivElement>(null);
 
@@ -157,9 +160,54 @@ function App() {
       <Hero onStart={scrollToPredict} />
 
       <div ref={predictRef}>
-        <PredictionForm
-          onPredictionSaved={handlePredictionSaved}
-        />
+        {!showStressAssessment ? (
+          <>
+            {/* Existing prediction form */}
+            <PredictionForm
+              onPredictionSaved={handlePredictionSaved}
+            />
+
+            {/* Stress assessment entry point */}
+            <div className="mx-auto max-w-4xl px-4 pb-8 sm:px-6">
+              <div className="neo-card-sm text-center">
+                <h2 className="text-xl font-bold text-primary">
+                  Want a more structured stress input?
+                </h2>
+
+                <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-secondary">
+                  Complete the stress assessment to get a
+                  structured stress score based on your
+                  responses over the past week.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowStressAssessment(true)
+                  }
+                  className="neo-btn neo-btn-primary mt-5"
+                >
+                  Take Stress Assessment
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Stress assessment */
+          <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+            <StressAssessment
+              onComplete={(result) => {
+                console.log(
+                  'Stress assessment result:',
+                  result
+                );
+              }}
+              onCancel={() =>
+                setShowStressAssessment(false)
+              }
+            />
+          </div>
+        )}
       </div>
 
       <HistorySection key={historyKey} />
@@ -175,7 +223,7 @@ function App() {
 
       <Chatbot />
 
-      <footer className="px-4 sm:px-6 py-8">
+      <footer className="px-4 py-8 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <hr className="neo-divider" />
 
@@ -187,7 +235,7 @@ function App() {
               — Built with React, Vite & Machine Learning
             </p>
 
-            <p className="text-xs text-muted mt-1">
+            <p className="mt-1 text-xs text-muted">
               &copy; {new Date().getFullYear()} MindPulse.
               All rights reserved.
             </p>
